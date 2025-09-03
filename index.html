@@ -338,7 +338,7 @@
         const resp = await provider.connect();
         updateOutput(`Success : ${JSON.stringify(resp)}`)
 
-        const address = (resp?.publicKey ?? resp?.accounts[0].publicKey ?? '').toString();
+        const address = (resp?.publicKey ?? resp?.accounts[0].address ?? '').toString();
         walletAddress.textContent = `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
         updateOutput(`Connected wallet: ${address}`);
         updateConnectionStatus(true);
@@ -351,6 +351,7 @@
     async function getBalance() {
       try {
         if (!provider || !provider.publicKey) {
+          updateOutput(`Injected wallet: ${JSON.stringify(provider)}`);
           updateOutput("Please connect wallet first!", true);
           return;
         }
