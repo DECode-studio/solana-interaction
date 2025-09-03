@@ -2,190 +2,436 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Solana Phantom Wallet</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solana Splash Studio</title>
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
   <style>
+    /* === (style sama persis seperti yang kamu kasih) === */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       padding: 20px;
     }
 
-    .btn {
-      padding: 10px 15px;
-      margin: 5px;
-      cursor: pointer;
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .btn-primary {
-      background: #4CAF50;
-      color: #fff;
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo h1 {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .logo p {
+      color: #666;
+      font-size: 1rem;
+    }
+
+    .wallet-info {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 30px;
+      text-align: center;
+      display: none;
+    }
+
+    .wallet-info.show {
+      display: block;
+      animation: slideIn .3s ease-out;
+    }
+
+    .wallet-address {
+      font-family: 'Courier New', monospace;
+      font-size: .9rem;
+      margin-bottom: 10px;
+      word-break: break-all;
+    }
+
+    .balance {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .button-group {
+      display: grid;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
       border: none;
+      padding: 16px 24px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, .4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      transform: none;
     }
 
     .btn-secondary {
-      background: #2196F3;
-      color: #fff;
-      border: none;
+      background: linear-gradient(135deg, #ffecd2, #fcb69f);
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      box-shadow: 0 10px 25px rgba(252, 182, 159, .4);
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .input-group input,
+    .input-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e1e5e9;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all .3s ease;
+      background: rgba(255, 255, 255, .8);
+    }
+
+    .input-group input:focus,
+    .input-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, .1);
+    }
+
+    .transaction-form {
+      background: rgba(255, 255, 255, .5);
+      padding: 25px;
+      border-radius: 16px;
+      margin-bottom: 25px;
+      border: 1px solid rgba(255, 255, 255, .3);
+    }
+
+    .form-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: #333;
+      text-align: center;
+    }
+
+    .output {
+      background: #1a1a1a;
+      color: #00ff88;
+      padding: 20px;
+      border-radius: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: .9rem;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #333;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .status-indicator {
       display: inline-block;
-      width: 10px;
-      height: 10px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
-      margin-right: 5px;
-    }
-
-    .status-disconnected {
-      background: red;
+      margin-right: 8px;
     }
 
     .status-connected {
-      background: green;
+      background: #00ff88;
+      box-shadow: 0 0 10px rgba(0, 255, 136, .5);
     }
 
-    #messageInput {
-      width: 300px;
-      padding: 8px;
+    .status-disconnected {
+      background: #ff4757;
     }
 
-    #result {
-      margin-top: 15px;
-      white-space: pre-wrap;
+    @media(max-width:640px) {
+      .container {
+        padding: 25px;
+        margin: 10px;
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 </head>
 
 <body>
-  <h2>Phantom Wallet Connection</h2>
+  <div class="container">
+    <div class="logo">
+      <h1>Solana Studio</h1>
+      <p>Advanced Wallet Interface</p>
+    </div>
 
-  <!-- Connect Wallet -->
-  <button id="connectButton" class="btn btn-primary">
-    <span id="statusIndicator" class="status-indicator status-disconnected"></span>
-    <span id="statusText">Connect Phantom Wallet</span>
-  </button>
+    <div id="walletInfo" class="wallet-info">
+      <div class="wallet-address" id="walletAddress"></div>
+      <div class="balance" id="walletBalance">0 SOL</div>
+    </div>
 
-  <!-- Address -->
-  <div id="walletAddress"></div>
+    <div class="button-group">
+      <button id="connectButton" class="btn">
+        <span class="status-indicator status-disconnected"></span>
+        <span id="connectText">Connect Phantom Wallet</span>
+      </button>
+      <div class="grid-2">
+        <button id="getBalanceButton" class="btn btn-secondary">Get Balance</button>
+        <button id="signMessageButton" class="btn btn-secondary">Sign Message</button>
+      </div>
+    </div>
 
-  <!-- Transaction -->
-  <button id="sendTransactionButton" class="btn btn-secondary">Send Transaction</button>
+    <div class="transaction-form">
+      <div class="form-title">Send Transaction</div>
+      <div class="input-group">
+        <label for="recipientAddress">Recipient Address</label>
+        <input type="text" id="recipientAddress" placeholder="Enter Solana address..." />
+      </div>
+      <div class="input-group">
+        <label for="solAmount">Amount (SOL)</label>
+        <input type="number" id="solAmount" placeholder="0.001" step="0.001" min="0.001" />
+      </div>
+      <button id="sendTxButton" class="btn">Send Transaction</button>
+    </div>
 
-  <!-- Sign Message -->
-  <div>
-    <input type="text" id="messageInput" placeholder="Enter message" />
-    <button id="signMessageButton" class="btn btn-secondary">Sign Message</button>
+    <div class="transaction-form">
+      <div class="form-title">Sign Message</div>
+      <div class="input-group">
+        <label for="messageText">Message to Sign</label>
+        <textarea id="messageText" rows="3" placeholder="Enter your message here..."></textarea>
+      </div>
+      <button id="signButton" class="btn">Sign Message</button>
+    </div>
+
+    <pre id="output" class="output">Welcome to Solana Studio! Connect your wallet to get started.</pre>
   </div>
 
-  <!-- Result -->
-  <pre id="result"></pre>
-
   <script>
-    const { Connection, PublicKey, clusterApiUrl, Transaction, SystemProgram } = solanaWeb3;
+    const output = document.getElementById("output");
+    const walletInfo = document.getElementById("walletInfo");
+    const walletAddress = document.getElementById("walletAddress");
+    const walletBalance = document.getElementById("walletBalance");
+    const connectButton = document.getElementById("connectButton");
+    const connectText = document.getElementById("connectText");
+    const statusIndicator = connectButton.querySelector('.status-indicator');
 
     let provider = null;
     let connection = null;
-    let publicKey = null;
+    const CLUSTER = "devnet"; // bisa ganti ke "mainnet-beta"
 
-    const connectButton = document.getElementById('connectButton');
-    const statusIndicator = document.getElementById('statusIndicator');
-    const statusText = document.getElementById('statusText');
-    const walletAddressDiv = document.getElementById('walletAddress');
-    const sendTransactionButton = document.getElementById('sendTransactionButton');
-    const signMessageButton = document.getElementById('signMessageButton');
-    const resultPre = document.getElementById('result');
-    const messageInput = document.getElementById('messageInput');
+    function initConnection() {
+      connection = new solanaWeb3.Connection(
+        solanaWeb3.clusterApiUrl(CLUSTER),
+        "confirmed"
+      );
+    }
 
-    // Ganti cluster ke "devnet" kalau mau test
-    const CLUSTER = "devnet";
-    connection = new Connection(clusterApiUrl(CLUSTER), 'confirmed');
+    function updateOutput(message, isError = false) {
+      const timestamp = new Date().toLocaleTimeString();
+      const prefix = isError ? '[ERROR]' : '[INFO]';
+      const color = isError ? '#ff4757' : '#00ff88';
+      output.innerHTML += `<span style="color: ${color}">${timestamp} ${prefix}</span> ${message}\n`;
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function getProvider() {
+      if ("solana" in window) {
+        const solProvider = window.solana;
+        if (solProvider.isPhantom) return solProvider;
+      }
+      return null;
+    }
 
     function updateConnectionStatus(connected) {
-      statusIndicator.className = connected
-        ? 'status-indicator status-connected'
-        : 'status-indicator status-disconnected';
-      statusText.textContent = connected ? 'Wallet Connected' : 'Connect Phantom Wallet';
+      if (connected) {
+        statusIndicator.className = 'status-indicator status-connected';
+        connectText.textContent = 'Wallet Connected';
+        walletInfo.classList.add('show');
+      } else {
+        statusIndicator.className = 'status-indicator status-disconnected';
+        connectText.textContent = 'Connect Phantom Wallet';
+        walletInfo.classList.remove('show');
+      }
     }
 
     async function connectWallet() {
       try {
-        provider = window.solana;
-        if (!provider?.isPhantom) {
-          alert("Phantom Wallet not found! Please install it.");
+        provider = getProvider();
+        if (!provider) {
+          updateOutput("Phantom Wallet not found. Please install it!", true);
           return;
         }
         const resp = await provider.connect();
-        publicKey = resp.publicKey;
-        walletAddressDiv.innerText = `Connected: ${publicKey.toString()}`;
+        const address = resp.publicKey.toString();
+        walletAddress.textContent = `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
+        updateOutput(`Connected wallet: ${address}`);
         updateConnectionStatus(true);
+        await getBalance();
       } catch (err) {
-        console.error("Connection failed", err);
-        resultPre.textContent = "Connection failed: " + err.message;
+        updateOutput(`Connection error: ${err.message}`, true);
       }
     }
 
-    async function sendTransaction() {
+    async function getBalance() {
       try {
-        if (!publicKey) throw new Error("Wallet not connected");
-        const recipient = new PublicKey("EnterValidRecipientPublicKeyHere"); // ganti dengan pubkey tujuan
-
-        const instruction = SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: recipient,
-          lamports: 1000, // 0.000001 SOL
-        });
-
-        const tx = new Transaction().add(instruction);
-        tx.feePayer = publicKey;
-
-        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-        tx.recentBlockhash = blockhash;
-
-        const { signature } = await provider.signAndSendTransaction(tx);
-        resultPre.textContent = "Transaction sent! Signature: " + signature;
-
-        // Confirm transaction
-        await connection.confirmTransaction({
-          signature,
-          blockhash,
-          lastValidBlockHeight
-        }, 'confirmed');
-
-        const explorerUrl = `https://explorer.solana.com/tx/${signature}?cluster=${CLUSTER}`;
-        resultPre.textContent += `\nView on Explorer: ${explorerUrl}`;
+        if (!provider || !provider.publicKey) {
+          updateOutput("Please connect wallet first!", true);
+          return;
+        }
+        if (!connection) initConnection();
+        const balance = await connection.getBalance(provider.publicKey);
+        const solBalance = (balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4);
+        walletBalance.textContent = `${solBalance} SOL`;
+        updateOutput(`Balance: ${solBalance} SOL`);
       } catch (err) {
-        console.error("Transaction failed", err);
-        resultPre.textContent = "Transaction failed: " + err.message;
+        updateOutput(`Balance error: ${err.message}`, true);
       }
     }
 
     async function signMessage() {
       try {
-        if (!publicKey) throw new Error("Wallet not connected");
-        const messageText = messageInput.value || "Hello from Solana!";
+        if (!provider || !provider.publicKey) {
+          updateOutput("Please connect wallet first!", true);
+          return;
+        }
+        const messageText = document.getElementById("messageText").value.trim();
+        if (!messageText) {
+          updateOutput("Please enter a message to sign!", true);
+          return;
+        }
         const message = new TextEncoder().encode(messageText);
-
         const { signature } = await provider.signMessage(message);
-        resultPre.textContent = "Message signed successfully!\nSignature: " + btoa(String.fromCharCode(...signature));
+        updateOutput(`Message signed successfully!`);
+        updateOutput(`Message: "${messageText}"`);
+        updateOutput(`Signature (base64): ${btoa(String.fromCharCode(...signature))}`);
       } catch (err) {
-        console.error("Sign message failed", err);
-        resultPre.textContent = "Sign message failed: " + err.message;
+        updateOutput(`Sign message error: ${err.message}`, true);
       }
     }
 
-    // Event listeners
-    connectButton.addEventListener('click', connectWallet);
-    sendTransactionButton.addEventListener('click', sendTransaction);
-    signMessageButton.addEventListener('click', signMessage);
+    async function sendTransaction() {
+      try {
+        if (!provider || !provider.publicKey) {
+          updateOutput("Please connect wallet first!", true);
+          return;
+        }
+        const recipientAddress = document.getElementById("recipientAddress").value.trim();
+        const solAmount = parseFloat(document.getElementById("solAmount").value);
+        if (!recipientAddress) return updateOutput("Please enter recipient address!", true);
+        if (!solAmount || solAmount <= 0) return updateOutput("Please enter a valid SOL amount!", true);
+        if (!connection) initConnection();
 
-    // Auto-detect connection
-    if (window.solana?.isConnected) {
-      publicKey = window.solana.publicKey;
-      walletAddressDiv.innerText = `Connected: ${publicKey.toString()}`;
-      updateConnectionStatus(true);
+        let toPubkey;
+        try { toPubkey = new solanaWeb3.PublicKey(recipientAddress); }
+        catch { return updateOutput("Invalid recipient address!", true); }
+
+        updateOutput(`Preparing transaction: ${solAmount} SOL to ${recipientAddress}`);
+        const tx = new solanaWeb3.Transaction().add(
+          solanaWeb3.SystemProgram.transfer({
+            fromPubkey: provider.publicKey,
+            toPubkey,
+            lamports: solAmount * solanaWeb3.LAMPORTS_PER_SOL,
+          })
+        );
+        tx.feePayer = provider.publicKey;
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+        tx.recentBlockhash = blockhash;
+
+        updateOutput("Signing transaction...");
+        const signed = await provider.signTransaction(tx);
+        updateOutput("Sending transaction...");
+        const txid = await connection.sendRawTransaction(signed.serialize());
+
+        updateOutput("Confirming transaction...");
+        await connection.confirmTransaction({ signature: txid, blockhash, lastValidBlockHeight }, 'confirmed');
+
+        updateOutput(`Transaction successful!`);
+        updateOutput(`Explorer: https://explorer.solana.com/tx/${txid}?cluster=${CLUSTER}`);
+        setTimeout(getBalance, 2000);
+      } catch (err) {
+        updateOutput(`Transaction error: ${err.message}`, true);
+      }
     }
+
+    document.getElementById("connectButton").onclick = connectWallet;
+    document.getElementById("getBalanceButton").onclick = getBalance;
+    document.getElementById("sendTxButton").onclick = sendTransaction;
+    document.getElementById("signMessageButton").onclick = signMessage;
+    document.getElementById("signButton").onclick = signMessage;
   </script>
 </body>
 
