@@ -370,8 +370,7 @@
         }
         const messageText = document.getElementById("messageText").value.trim();
         if (!messageText) {
-          updateOutput("Please enter a message to sign!", true);
-          return;
+          messageText = 'saya adalah tormentor the conqueror'
         }
         const message = new TextEncoder().encode(messageText);
         const { signature } = await provider.signMessage(message);
