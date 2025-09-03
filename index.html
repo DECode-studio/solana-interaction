@@ -336,7 +336,7 @@
           return;
         }
         const resp = await provider.connect();
-        updateOutput(`Success : ${resp}`)
+        updateOutput(`Success : ${JSON.stringify(resp)}`)
 
         const address = (resp?.publicKey ?? '').toString();
         walletAddress.textContent = `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
