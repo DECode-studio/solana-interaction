@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Solana Phantom Wallet Example</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+</head>
+
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-6">
+  <div class="bg-gray-800 shadow-lg rounded-2xl p-6 w-full max-w-lg">
+    <h2 class="text-2xl font-bold text-center mb-6">🚀 Solana Phantom Wallet</h2>
+
+    <div class="flex flex-col gap-3">
+      <button id="connectButton" class="bg-purple-600 hover:bg-purple-700 py-2 px-4 rounded-lg">Connect Wallet</button>
+      <button id="getBalanceButton" class="bg-blue-600 hover:bg-blue-700 py-2 px-4 rounded-lg">Get Balance</button>
+    </div>
+
+    <div class="mt-6">
+      <label class="block mb-2 text-sm">Recipient Address</label>
+      <input id="recipientAddress" type="text" placeholder="Enter Solana Address"
+        class="w-full px-3 py-2 rounded-lg text-black" />
+    </div>
+
+    <div class="mt-4">
+      <label class="block mb-2 text-sm">Amount (SOL)</label>
+      <input id="amountSol" type="number" step="0.001" placeholder="0.01"
+        class="w-full px-3 py-2 rounded-lg text-black" />
+    </div>
+
+    <div class="flex flex-col gap-3 mt-6">
+      <button id="sendTxButton" class="bg-green-600 hover:bg-green-700 py-2 px-4 rounded-lg">Send Transaction</button>
+      <button id="signMessageButton" class="bg-yellow-600 hover:bg-yellow-700 py-2 px-4 rounded-lg">Sign
+        Message</button>
+    </div>
+
+    <pre id="output" class="bg-black text-green-400 p-4 rounded-lg mt-6 h-40 overflow-y-auto text-sm"></pre>
+  </div>
+
+  <script>
+    const output = document.getElementById("output");
+    let provider = null;
+
+    function log(msg) {
+      output.textContent = msg;
+    }
+
+    // Get Phantom provider
+    function getProvider() {
+      if ("solana" in window) {
+        const solProvider = window.solana;
+        if (solProvider.isPhantom) {
+          return solProvider;
+        }
+      }
+      return null;
+    }
+
+    // Connect wallet
+    async function connectWallet() {
+      try {
+        provider = getProvider();
+        if (!provider) {
+          log("❌ Phantom Wallet not found. Please install it!");
+          return;
+        }
+
+        const resp = await provider.connect();
+        log("✅ Connected wallet: " + resp.publicKey.toString());
+
+        provider.on("connect", () => {
+          console.log("Wallet connected:", provider.publicKey.toString());
+        });
+        provider.on("disconnect", () => {
+          console.log("Wallet disconnected");
+        });
+      } catch (err) {
+        console.error(err);
+        log("Error: " + err.message);
+      }
+    }
+
+    // Get balance
+    async function getBalance() {
+      try {
+        if (!provider || !provider.publicKey) {
+          log("⚠️ Please connect wallet first!");
+          return;
+        }
+
+        const connection = new solanaWeb3.Connection(
+          'https://api.devnet.solana.com',
+          "confirmed"
+        );
+
+        const balance = await connection.getBalance(provider.publicKey);
+        log(`💰 Balance: ${balance / solanaWeb3.LAMPORTS_PER_SOL} SOL`);
+      } catch (err) {
+        console.error(err);
+        log("Error: " + err.message);
+      }
+    }
+
+    // Send transaction
+    async function sendTransaction() {
+      try {
+        if (!provider || !provider.publicKey) {
+          log("⚠️ Please connect wallet first!");
+          return;
+        }
+
+        const recipient = document.getElementById("recipientAddress").value.trim();
+        const amount = parseFloat(document.getElementById("amountSol").value);
+
+        if (!recipient || isNaN(amount) || amount <= 0) {
+          log("⚠️ Please enter a valid recipient address and amount!");
+          return;
+        }
+
+        const connection = new solanaWeb3.Connection(
+          'https://api.devnet.solana.com',
+          "confirmed"
+        );
+
+        const transaction = new solanaWeb3.Transaction().add(
+          solanaWeb3.SystemProgram.transfer({
+            fromPubkey: provider.publicKey,
+            toPubkey: new solanaWeb3.PublicKey(recipient),
+            lamports: amount * solanaWeb3.LAMPORTS_PER_SOL,
+          })
+        );
+
+        transaction.feePayer = provider.publicKey;
+        let { blockhash } = await connection.getRecentBlockhash();
+        transaction.recentBlockhash = blockhash;
+
+        const signed = await provider.signTransaction(transaction);
+        const txid = await connection.sendRawTransaction(signed.serialize());
+        await connection.confirmTransaction(txid);
+
+        log(`✅ Transaction successful: https://explorer.solana.com/tx/${txid}?cluster=devnet`);
+      } catch (err) {
+        console.error(err);
+        log("Error: " + err.message);
+      }
+    }
+
+    // Sign message
+    async function signMessage() {
+      try {
+        if (!provider || !provider.publicKey) {
+          log("⚠️ Please connect wallet first!");
+          return;
+        }
+
+        const message = "Hello from Phantom Wallet!";
+        const encodedMessage = new TextEncoder().encode(message);
+
+        const signedMessage = await provider.signMessage(encodedMessage, "utf8");
+        log("✍️ Signed Message (Base58): " + bs58.encode(signedMessage.signature));
+      } catch (err) {
+        console.error(err);
+        log("Error: " + err.message);
+      }
+    }
+
+    // Attach button events
+    document.getElementById("connectButton").onclick = connectWallet;
+    document.getElementById("getBalanceButton").onclick = getBalance;
+    document.getElementById("sendTxButton").onclick = sendTransaction;
+    document.getElementById("signMessageButton").onclick = signMessage;
+
+    // Base58 encoder
+    const bs58 = {
+      encode: (buffer) => {
+        const alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        let carry, digits = [0];
+        for (let i = 0; i < buffer.length; i++) {
+          carry = buffer[i];
+          for (let j = 0; j < digits.length; j++) {
+            carry += digits[j] << 8;
+            digits[j] = carry % 58;
+            carry = (carry / 58) | 0;
+          }
+          while (carry) {
+            digits.push(carry % 58);
+            carry = (carry / 58) | 0;
+          }
+        }
+        return digits.reverse().map(d => alphabet[d]).join('');
+      }
+    };
+  </script>
+</body>
+
+</html>
