@@ -338,7 +338,7 @@
         const resp = await provider.connect();
         updateOutput(`Success : ${JSON.stringify(resp)}`)
 
-        const address = (resp?.publicKey ?? '').toString();
+        const address = (resp?.publicKey ?? resp?.accounts[0].address ?? '').toString();
         walletAddress.textContent = `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
         updateOutput(`Connected wallet: ${address}`);
         updateConnectionStatus(true);
