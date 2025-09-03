@@ -295,7 +295,7 @@
 
     function initConnection() {
       connection = new solanaWeb3.Connection(
-        solanaWeb3.clusterApiUrl(CLUSTER),
+        'https://solana-rpc.publicnode.com',
         "confirmed"
       );
     }
