@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Splash Studio</title>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .wallet-info {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            text-align: center;
+            display: none;
+        }
+
+        .wallet-info.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .wallet-address {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+
+        .balance {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .button-group {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ffecd2, #fcb69f);
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 10px 25px rgba(252, 182, 159, 0.4);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .transaction-form {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .form-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .output {
+            background: #1a1a1a;
+            color: #00ff88;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-connected {
+            background: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .status-disconnected {
+            background: #ff4757;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 25px;
+                margin: 10px;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>Solana Studio</h1>
+            <p>Advanced Wallet Interface</p>
+        </div>
+
+        <div id="walletInfo" class="wallet-info">
+            <div class="wallet-address" id="walletAddress"></div>
+            <div class="balance" id="walletBalance">0 SOL</div>
+        </div>
+
+        <div class="button-group">
+            <button id="connectButton" class="btn">
+                <span class="status-indicator status-disconnected"></span>
+                Connect Phantom Wallet
+            </button>
+            <div class="grid-2">
+                <button id="getBalanceButton" class="btn btn-secondary">Get Balance</button>
+                <button id="signMessageButton" class="btn btn-secondary">Sign Message</button>
+            </div>
+        </div>
+
+        <div class="transaction-form">
+            <div class="form-title">Send Transaction</div>
+            <div class="input-group">
+                <label for="recipientAddress">Recipient Address</label>
+                <input type="text" id="recipientAddress" placeholder="Enter Solana address..." />
+            </div>
+            <div class="input-group">
+                <label for="solAmount">Amount (SOL)</label>
+                <input type="number" id="solAmount" placeholder="0.001" step="0.001" min="0.001" />
+            </div>
+            <button id="sendTxButton" class="btn">Send Transaction</button>
+        </div>
+
+        <div class="transaction-form">
+            <div class="form-title">Sign Message</div>
+            <div class="input-group">
+                <label for="messageText">Message to Sign</label>
+                <textarea id="messageText" rows="3" placeholder="Enter your message here..."></textarea>
+            </div>
+            <button id="signButton" class="btn">Sign Message</button>
+        </div>
+
+        <pre id="output" class="output">Welcome to Solana Studio! Connect your wallet to get started.</pre>
+    </div>
+
+    <script>
+        const output = document.getElementById("output");
+        const walletInfo = document.getElementById("walletInfo");
+        const walletAddress = document.getElementById("walletAddress");
+        const walletBalance = document.getElementById("walletBalance");
+        const connectButton = document.getElementById("connectButton");
+        const statusIndicator = connectButton.querySelector('.status-indicator');
+
+        let provider = null;
+        let connection = null;
+
+        // Initialize connection
+        function initConnection() {
+            connection = new solanaWeb3.Connection(
+                'https://api.mainnet-beta.solana.com',
+                "confirmed"
+            );
+        }
+
+        // Update output with timestamp
+        function updateOutput(message, isError = false) {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = isError ? '[ERROR]' : '[INFO]';
+            const color = isError ? '#ff4757' : '#00ff88';
+            output.innerHTML += `<span style="color: ${color}">${timestamp} ${prefix}</span> ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Get Phantom provider
+        function getProvider() {
+            if ("solana" in window) {
+                const solProvider = window.solana;
+                if (solProvider.isPhantom) {
+                    return solProvider;
+                }
+            }
+            return null;
+        }
+
+        // Update UI connection status
+        function updateConnectionStatus(connected) {
+            if (connected) {
+                connectButton.innerHTML = '<span class="status-indicator status-connected"></span>Wallet Connected';
+                statusIndicator.className = 'status-indicator status-connected';
+                walletInfo.classList.add('show');
+            } else {
+                connectButton.innerHTML = '<span class="status-indicator status-disconnected"></span>Connect Phantom Wallet';
+                statusIndicator.className = 'status-indicator status-disconnected';
+                walletInfo.classList.remove('show');
+            }
+        }
+
+        // Connect wallet
+        async function connectWallet() {
+            try {
+                provider = getProvider();
+                if (!provider) {
+                    updateOutput("Phantom Wallet not found. Please install it!", true);
+                    return;
+                }
+
+                const resp = await provider.connect();
+                const address = resp.publicKey.toString();
+                walletAddress.textContent = `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
+
+                updateOutput(`Connected wallet: ${address}`);
+                updateConnectionStatus(true);
+
+                // Auto-get balance after connection
+                await getBalance();
+
+                // Event listeners
+                provider.on("connect", () => {
+                    updateOutput("Wallet connected successfully");
+                    updateConnectionStatus(true);
+                });
+
+                provider.on("disconnect", () => {
+                    updateOutput("Wallet disconnected");
+                    updateConnectionStatus(false);
+                });
+
+            } catch (err) {
+                updateOutput(`Connection error: ${err.message}`, true);
+            }
+        }
+
+        // Get balance
+        async function getBalance() {
+            try {
+                if (!provider || !provider.publicKey) {
+                    updateOutput("Please connect wallet first!", true);
+                    return;
+                }
+
+                if (!connection) initConnection();
+
+                const balance = await connection.getBalance(provider.publicKey);
+                const solBalance = (balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4);
+
+                walletBalance.textContent = `${solBalance} SOL`;
+                updateOutput(`Balance: ${solBalance} SOL`);
+
+            } catch (err) {
+                updateOutput(`Balance error: ${err.message}`, true);
+            }
+        }
+
+        // Sign message
+        async function signMessage() {
+            try {
+                if (!provider || !provider.publicKey) {
+                    updateOutput("Please connect wallet first!", true);
+                    return;
+                }
+
+                const messageText = document.getElementById("messageText").value.trim();
+                if (!messageText) {
+                    updateOutput("Please enter a message to sign!", true);
+                    return;
+                }
+
+                const message = new TextEncoder().encode(messageText);
+                const signature = await provider.signMessage(message, "utf8");
+
+                updateOutput(`Message signed successfully!`);
+                updateOutput(`Message: "${messageText}"`);
+                updateOutput(`Signature: ${Array.from(signature.signature).map(b => b.toString(16).padStart(2, '0')).join('')}`);
+
+            } catch (err) {
+                updateOutput(`Sign message error: ${err.message}`, true);
+            }
+        }
+
+        // Send transaction
+        async function sendTransaction() {
+            try {
+                if (!provider || !provider.publicKey) {
+                    updateOutput("Please connect wallet first!", true);
+                    return;
+                }
+
+                const recipientAddress = document.getElementById("recipientAddress").value.trim();
+                const solAmount = parseFloat(document.getElementById("solAmount").value);
+
+                if (!recipientAddress) {
+                    updateOutput("Please enter recipient address!", true);
+                    return;
+                }
+
+                if (!solAmount || solAmount <= 0) {
+                    updateOutput("Please enter a valid SOL amount!", true);
+                    return;
+                }
+
+                if (!connection) initConnection();
+
+                // Validate recipient address
+                let toPubkey;
+                try {
+                    toPubkey = new solanaWeb3.PublicKey(recipientAddress);
+                } catch {
+                    updateOutput("Invalid recipient address!", true);
+                    return;
+                }
+
+                updateOutput(`Preparing transaction: ${solAmount} SOL to ${recipientAddress}`);
+
+                // Create transaction
+                const transaction = new solanaWeb3.Transaction().add(
+                    solanaWeb3.SystemProgram.transfer({
+                        fromPubkey: provider.publicKey,
+                        toPubkey: toPubkey,
+                        lamports: solAmount * solanaWeb3.LAMPORTS_PER_SOL,
+                    })
+                );
+
+                transaction.feePayer = provider.publicKey;
+                const { blockhash } = await connection.getLatestBlockhash();
+                transaction.recentBlockhash = blockhash;
+
+                updateOutput("Signing transaction...");
+                const signed = await provider.signTransaction(transaction);
+
+                updateOutput("Sending transaction...");
+                const txid = await connection.sendRawTransaction(signed.serialize());
+
+                updateOutput("Confirming transaction...");
+                await connection.confirmTransaction(txid, 'confirmed');
+
+                updateOutput(`Transaction successful!`);
+                updateOutput(`TX ID: ${txid}`);
+                updateOutput(`Explorer: https://explorer.solana.com/tx/${txid}`);
+
+                // Refresh balance
+                setTimeout(getBalance, 2000);
+
+                // Clear form
+                document.getElementById("recipientAddress").value = "";
+                document.getElementById("solAmount").value = "";
+
+            } catch (err) {
+                updateOutput(`Transaction error: ${err.message}`, true);
+            }
+        }
+
+        // Event listeners
+        document.getElementById("connectButton").onclick = connectWallet;
+        document.getElementById("getBalanceButton").onclick = getBalance;
+        document.getElementById("sendTxButton").onclick = sendTransaction;
+        document.getElementById("signMessageButton").onclick = signMessage;
+        document.getElementById("signButton").onclick = signMessage;
+
+        // Initialize
+        updateOutput("Solana Studio initialized. Ready to connect!");
+
+        // Auto-connect if already connected
+        window.addEventListener('load', async () => {
+            const provider = getProvider();
+            if (provider && provider.isConnected) {
+                await connectWallet();
+            }
+        });
+    </script>
+</body>
+
+</html>
