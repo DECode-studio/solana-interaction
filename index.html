@@ -391,43 +391,50 @@
           updateOutput("Please connect wallet first!", true);
           return;
         }
+
         const recipientAddress = document.getElementById("recipientAddress").value.trim();
         const solAmount = parseFloat(document.getElementById("solAmount").value);
+
         if (!recipientAddress) return updateOutput("Please enter recipient address!", true);
         if (!solAmount || solAmount <= 0) return updateOutput("Please enter a valid SOL amount!", true);
         if (!connection) initConnection();
 
         let toPubkey;
-        try { toPubkey = new solanaWeb3.PublicKey(recipientAddress); }
-        catch { return updateOutput("Invalid recipient address!", true); }
+        try {
+          toPubkey = new solanaWeb3.PublicKey(recipientAddress);
+        } catch {
+          return updateOutput("Invalid recipient address!", true);
+        }
 
         updateOutput(`Preparing transaction: ${solAmount} SOL to ${recipientAddress}`);
-        const tx = new solanaWeb3.Transaction().add(
-          solanaWeb3.SystemProgram.transfer({
-            fromPubkey: provider.publicKey,
-            toPubkey,
-            lamports: solAmount * solanaWeb3.LAMPORTS_PER_SOL,
-          })
-        );
-        tx.feePayer = provider.publicKey;
-        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-        tx.recentBlockhash = blockhash;
+        const { blockhash } = await connection.getLatestBlockhash("finalized");
+        const message = new solanaWeb3.TransactionMessage({
+          payerKey: provider.publicKey,
+          recentBlockhash: blockhash,
+          instructions: [
+            solanaWeb3.SystemProgram.transfer({
+              fromPubkey: provider.publicKey,
+              toPubkey,
+              lamports: solAmount * solanaWeb3.LAMPORTS_PER_SOL,
+            }),
+          ],
+        }).compileToV0Message();
 
-        updateOutput("Signing transaction...");
-        const signed = await provider.signTransaction(tx);
-        updateOutput("Sending transaction...");
-        const txid = await connection.sendRawTransaction(signed.serialize());
+        const transaction = new solanaWeb3.VersionedTransaction(message);
+        updateOutput("Signing & sending transaction...");
+        const { signature } = await provider.signAndSendTransaction(transaction);
 
         updateOutput("Confirming transaction...");
-        await connection.confirmTransaction({ signature: txid, blockhash, lastValidBlockHeight }, 'confirmed');
+        await connection.confirmTransaction(signature, "confirmed");
 
         updateOutput(`Transaction successful!`);
-        updateOutput(`Explorer: https://explorer.solana.com/tx/${txid}?cluster=${CLUSTER}`);
+        updateOutput(`Explorer: https://explorer.solana.com/tx/${signature}?cluster=${CLUSTER}`);
         setTimeout(getBalance, 2000);
       } catch (err) {
         updateOutput(`Transaction error: ${err.message}`, true);
       }
     }
+
 
     document.getElementById("connectButton").onclick = connectWallet;
     document.getElementById("getBalanceButton").onclick = getBalance;
